@@ -1,5 +1,5 @@
 // File: MyCardsScreen.kt
-package com.example.cardsapp // Assuming a package name
+package com.coperative.financialcardsApp.ui.screens // Assuming a package name
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -71,13 +70,13 @@ fun CardItem(card: Card, onClick: () -> Unit) {
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(card.type, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text(card.status, color = Color.White, fontSize = 14.sp)
-            Text(card.maskedNumber, color = Color.White, fontSize = 18.sp)
+            Text(card.number, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(card.holderName, color = Color.White, fontSize = 14.sp)
+            Text(card.currency!!, color = Color.White, fontSize = 18.sp)
             Text(card.holderName, color = Color.White, fontSize = 16.sp)
-            if (card.balance != null) {
-                Text(card.balance, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            } else if (card.limit != null) {
+            if (card.currency != null) {
+                Text(card.getDisplayBalance(), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            } else if (card.isBlocked != null) {
                 Text("Limit: ${card.limit}", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {

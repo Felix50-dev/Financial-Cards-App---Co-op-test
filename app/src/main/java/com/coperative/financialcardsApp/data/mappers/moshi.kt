@@ -4,6 +4,7 @@ import com.coperative.financialcardsApp.data.local.entities.CardEntity
 import com.coperative.financialcardsApp.data.local.entities.TransactionEntity
 import com.coperative.financialcardsApp.data.remote.dto.CardDto
 import com.coperative.financialcardsApp.data.remote.dto.TransactionDto
+import com.coperative.financialcardsApp.data.remote.dto.UserDto
 import com.coperative.financialcardsApp.domain.model.Card
 import com.coperative.financialcardsApp.domain.model.Transaction
 import com.coperative.financialcardsApp.domain.model.User
@@ -24,18 +25,18 @@ fun CardDto.toEntity(): CardEntity {
     }
 
     val extra = when (type) {
-        "PREPAID" -> """{"loadBalance":${this.loadBalance}}"""
+        "PREPAID" -> """{"loadBalance":${this.balance}}"""
         "CREDIT" -> """{"creditLimit":${this.creditLimit},"dueDate":"${this.dueDate}"}"""
-        "MULTI" -> moshi.adapter(Map::class.java).toJson(this.balances)
+        "MULTI" -> moshi.adapter(Map::class.java).toJson(this.balance as Map<*, *>?)
         "DEBIT" -> """{"linkedAccountName":"${this.linkedAccountName}","balance":${this.balance}}"""
         else -> null
     }
 
     return CardEntity(
         id = this.id,
-        number = this.number,
+        number = this.cardNumber,
         holderName = this.holderName,
-        isBlocked = this.isBlocked,
+        isBlocked = this.,
         type = type,
         extraJson = extra
     )
@@ -83,6 +84,6 @@ fun TransactionDto.toEntity(cardId: String): TransactionEntity =
 fun TransactionDto.toDomain(): Transaction =
     Transaction(id = id, amount = amount, date = date, description = description, currency = currency)
 
-fun UserDto.toDomain(): User = User(name = name, avatarUrl = avatarUrl, email = email, phone = phone, address = address)
+fun UserDto.toDomain(): User = User(id = id,firstName = firstName, lastName = lastName, avatarUrl = avatarUrl, email = email, phone = phone, address = address)
 
 // DTO declarations are left to you (CardDto, TransactionDto, UserDto). Make sure fields (type, balances, etc.) match.

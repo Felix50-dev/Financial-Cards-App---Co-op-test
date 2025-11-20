@@ -23,8 +23,9 @@ class CardRepositoryImpl(
         try {
             // --- LOCAL FIRST ---
             val local = dao.getAllCards()
-                .firstOrNull()
-                ?.map { it.toDomain() }
+                .first()
+                ?.map {
+                    it.toDomain() }
                 .orEmpty()
 
             if (local.isNotEmpty()) {

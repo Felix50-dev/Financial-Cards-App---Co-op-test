@@ -1,4 +1,3 @@
-// File: CardDetailsScreen.kt
 package com.coperative.financialcardsApp.ui.screens // Assuming a package name
 
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage // Requires coil dependency: implementation("io.coil-kt:coil-compose:2.4.0")
+import coil.compose.AsyncImage
+import com.coperative.financialcardsApp.domain.model.Card
 
 @Composable
 fun CardDetailsScreen(card: Card, navController: NavHostController) {
@@ -34,7 +34,7 @@ fun CardDetailsScreen(card: Card, navController: NavHostController) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("${card.type} Details", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text("${card.currency} Details", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
         CardItem(card, onClick = {}) // Display the card again
         Spacer(modifier = Modifier.height(16.dp))
@@ -60,7 +60,7 @@ fun CardDetailsScreen(card: Card, navController: NavHostController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Icon if available
-                if (transaction.iconUrl != null) {
+                if (transaction != null) {
                     AsyncImage(
                         model = transaction.iconUrl,
                         contentDescription = null,

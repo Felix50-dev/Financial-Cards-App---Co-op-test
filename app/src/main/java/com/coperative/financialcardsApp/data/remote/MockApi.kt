@@ -31,18 +31,3 @@ interface MockApi {
     }
 }
 
-object ApiClient {
-
-    private const val BASE_URL = "https://card-services.free.beeceptor.com/"
-
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
-
-    val api: MockApi = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .addConverterFactory(MoshiConverterFactory.create(moshi))
-        .build()
-        .create(MockApi::class.java)
-}
-
