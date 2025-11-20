@@ -5,6 +5,7 @@ import com.coperative.financialcardsApp.data.local.dao.CardDao
 import com.coperative.financialcardsApp.data.mappers.toDomain
 import com.coperative.financialcardsApp.data.mappers.toEntity
 import com.coperative.financialcardsApp.data.remote.MockApi
+import com.coperative.financialcardsApp.data.remote.dto.toDomain
 import com.coperative.financialcardsApp.domain.model.Card
 import com.coperative.financialcardsApp.domain.model.Transaction
 import com.coperative.financialcardsApp.domain.model.User
@@ -37,14 +38,15 @@ class CardRepositoryImpl(
             val remoteEntities = remoteDtos.map { it.toEntity() }
             dao.insertCards(remoteEntities)
 
-            emit(Resource.Success(remoteDtos.map { it.toDomain() }))
+            emit(Resource.Success(remoteDtos.map { it
+                .toDomain() }))
 
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "Unknown error"))
         }
     }.flowOn(Dispatchers.IO)
 
-    override fun getTransactions(cardId: String): Flow<Resource<List<Transaction>>> = flow<Resource<List<Transaction>>> {
+    override fun getTransactions(cardId: String): Flow<Resource<List<Transaction>>> = flow {
         emit(Resource.Loading())
 
         try {

@@ -39,40 +39,11 @@ data class WalletDto(
 
 fun CardDto.toDomain(): Card {
     return when (type) {
-        "PREPAID" -> Card.Prepaid(
-            id = id,
-            number = cardNumber,
-            holderName = holderName,
-            isBlocked = status == "BLOCKED",
-            loadBalance = balance ?: 0.0
-        )
-
-        "CREDIT" -> Card.Credit(
-            id = id,
-            number = cardNumber,
-            holderName = holderName,
-            isBlocked = status == "BLOCKED",
-            creditLimit = creditLimit ?: 0.0,
-            dueDate = dueDate ?: ""
-        )
-
-        "MULTI_CURRENCY" -> Card.MultiCurrency(
-            id = id,
-            number = cardNumber,
-            holderName = holderName,
-            isBlocked = status == "BLOCKED",
-            balances = wallets?.associate { it.currency to it.balance } ?: emptyMap()
-        )
-
-        "DEBIT" -> Card.Debit(
-            id = id,
-            number = cardNumber,
-            holderName = holderName,
-            isBlocked = status == "BLOCKED",
-            linkedAccountName = linkedAccountName ?: "Unknown",
-            balance = balance ?: 0.0
-        )
-
+        "PREPAID" -> Card.Prepaid(id, cardNumber, holderName, status == "BLOCKED", balance ?: 0.0)
+        "CREDIT" -> Card.Credit(id, cardNumber, holderName, status == "BLOCKED", creditLimit ?: 0.0, dueDate ?: "")
+        "MULTI_CURRENCY" -> Card.MultiCurrency(id, cardNumber, holderName, status == "BLOCKED",
+            wallets?.associate { it.currency to it.balance } ?: emptyMap())
+        "DEBIT" -> Card.Debit(id, cardNumber, holderName, status == "BLOCKED", linkedAccountName ?: "Unknown", balance ?: 0.0)
         else -> throw IllegalArgumentException("Unknown card type: $type")
     }
 }

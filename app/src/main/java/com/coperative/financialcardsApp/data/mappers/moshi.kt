@@ -4,86 +4,49 @@ import com.coperative.financialcardsApp.data.local.entities.CardEntity
 import com.coperative.financialcardsApp.data.local.entities.TransactionEntity
 import com.coperative.financialcardsApp.data.remote.dto.CardDto
 import com.coperative.financialcardsApp.data.remote.dto.TransactionDto
-import com.coperative.financialcardsApp.data.remote.dto.UserDto
 import com.coperative.financialcardsApp.domain.model.Card
 import com.coperative.financialcardsApp.domain.model.Transaction
-import com.coperative.financialcardsApp.domain.model.User
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-private val mapAdapter = moshi.adapter(Map::class.java)
-
-fun CardDto.toEntity(): CardEntity {
-    // We'll store variant fields in extraJson to keep entity flexible
-    val type = when (this.type) {
-        "PREPAID" -> "PREPAID"
-        "CREDIT" -> "CREDIT"
-        "MULTI" -> "MULTI"
-        "DEBIT" -> "DEBIT"
-        else -> "PREPAID"
-    }
-
-    val extra = when (type) {
-        "PREPAID" -> """{"loadBalance":${this.balance}}"""
-        "CREDIT" -> """{"creditLimit":${this.creditLimit},"dueDate":"${this.dueDate}"}"""
-        "MULTI" -> moshi.adapter(Map::class.java).toJson(this.balance as Map<*, *>?)
-        "DEBIT" -> """{"linkedAccountName":"${this.linkedAccountName}","balance":${this.balance}}"""
-        else -> null
-    }
-
-    return CardEntity(
-        id = this.id,
-        number = this.cardNumber,
-        holderName = this.holderName,
-        isBlocked = this.,
-        type = type,
-        extraJson = extra
-    )
-}
 
 fun CardEntity.toDomain(): Card {
-    val type = this.type
-    val extraJson = this.extraJson
-
     return when (type) {
         "PREPAID" -> {
-            val loadBalance = extraJson?.let {
-                moshi.adapter(Map::class.java).fromJson(it)?.get("loadBalance") as? Double
-            } ?: 0.0
-            Card.Prepaid(id, number, holderName, isBlocked, loadBalance)
+            val balance = extraJson?.let { moshi.adapter(Double::class.java).fromJson(it) } ?: 0.0
+            Card.Prepaid(id, number, holderName, isBlocked, balance)
         }
         "CREDIT" -> {
-            val parsed = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) } ?: emptyMap<String, Any>()
-            val creditLimit = (parsed["creditLimit"] as? Double) ?: 0.0
-            val dueDate = (parsed["dueDate"] as? String) ?: ""
+            val map = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Any> }.orEmpty()
+            val creditLimit = map["creditLimit"] as? Double ?: 0.0
+            val dueDate = map["dueDate"] as? String ?: ""
             Card.Credit(id, number, holderName, isBlocked, creditLimit, dueDate)
         }
         "MULTI" -> {
-            val balances = extraJson?.let {
-                moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Double>
-            } ?: emptyMap()
-            Card.MultiCurrency(id, number, holderName, isBlocked, balances)
+            val map = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Double> }.orEmpty()
+            Card.MultiCurrency(id, number, holderName, isBlocked, map)
         }
         "DEBIT" -> {
-            val parsed = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) } ?: emptyMap<String, Any>()
-            val linked = (parsed["linkedAccountName"] as? String) ?: ""
-            val balance = (parsed["balance"] as? Double) ?: 0.0
-            Card.Debit(id, number, holderName, isBlocked, linked, balance)
+            val map = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Any> }.orEmpty()
+            val balance = map["balance"] as? Double ?: 0.0
+            val linkedAccountName = map["linkedAccountName"] as? String ?: "Unknown"
+            Card.Debit(id, number, holderName, isBlocked, linkedAccountName, balance)
         }
-        else -> Card.Prepaid(id, number, holderName, isBlocked, 0.0)
+        else -> throw IllegalArgumentException("Unknown card type: $type")
     }
 }
 
-fun TransactionEntity.toDomain(): Transaction =
-    Transaction(id = id, amount = amount, date = date, description = description, currency = currency)
+fun TransactionEntity.toDomain() = Transaction(id, amount, date, description, currency)
 
-fun TransactionDto.toEntity(cardId: String): TransactionEntity =
-    TransactionEntity(id = id, cardId = cardId, amount = amount, date = date, description = description, currency = currency)
+fun CardDto.toEntity(): CardEntity {
+    val extra = when(type) {
+        "PREPAID", "DEBIT" -> moshi.adapter(Map::class.java).toJson(mapOf("balance" to (balance ?: 0.0)))
+        "CREDIT" -> moshi.adapter(Map::class.java).toJson(mapOf("creditLimit" to (creditLimit ?: 0.0), "dueDate" to (dueDate ?: "")))
+        "MULTI_CURRENCY" -> moshi.adapter(Map::class.java).toJson(wallets?.associate { it.currency to it.balance } ?: emptyMap<String, Double>())
+        else -> null
+    }
+    return CardEntity(id, cardNumber, holderName, status == "BLOCKED", type, extra)
+}
 
-fun TransactionDto.toDomain(): Transaction =
-    Transaction(id = id, amount = amount, date = date, description = description, currency = currency)
-
-fun UserDto.toDomain(): User = User(id = id,firstName = firstName, lastName = lastName, avatarUrl = avatarUrl, email = email, phone = phone, address = address)
-
-// DTO declarations are left to you (CardDto, TransactionDto, UserDto). Make sure fields (type, balances, etc.) match.
+fun TransactionDto.toEntity(cardId: String) = TransactionEntity(id, cardId, amount, currency, date, merchant)

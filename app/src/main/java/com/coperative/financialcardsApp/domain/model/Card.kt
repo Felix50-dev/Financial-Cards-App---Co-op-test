@@ -4,10 +4,7 @@ sealed class Card(
     open val id: String,
     open val number: String,
     open val holderName: String,
-    open val isBlocked: Boolean,
-    open val name: String,
-    open val expiryDate: String?,
-    open val currency: String?
+    open val isBlocked: Boolean
 ) {
     abstract fun getDisplayBalance(): String
     fun maskedNumber(): String = "**** ${number.takeLast(4)}"
@@ -17,12 +14,9 @@ sealed class Card(
         override val number: String,
         override val holderName: String,
         override val isBlocked: Boolean,
-        override val name: String,
-        override val expiryDate: String?,
-        override val currency: String?,
         val loadBalance: Double
-    ) : Card(id, number, holderName, isBlocked, name, expiryDate, currency) {
-        override fun getDisplayBalance() = "$currency ${loadBalance.formatAsCurrency()}"
+    ) : Card(id, number, holderName, isBlocked) {
+        override fun getDisplayBalance() = "KES ${loadBalance.formatAsCurrency()}"
     }
 
     data class Credit(
@@ -30,13 +24,10 @@ sealed class Card(
         override val number: String,
         override val holderName: String,
         override val isBlocked: Boolean,
-        override val name: String,
-        override val expiryDate: String?,
-        override val currency: String?,
         val creditLimit: Double,
         val dueDate: String
-    ) : Card(id, number, holderName, isBlocked, name, expiryDate, currency) {
-        override fun getDisplayBalance() = "Limit: $currency ${creditLimit.formatAsCurrency()}"
+    ) : Card(id, number, holderName, isBlocked) {
+        override fun getDisplayBalance() = "Limit: KES ${creditLimit.formatAsCurrency()}"
     }
 
     data class MultiCurrency(
@@ -44,13 +35,10 @@ sealed class Card(
         override val number: String,
         override val holderName: String,
         override val isBlocked: Boolean,
-        override val name: String,
-        override val expiryDate: String?,
-        override val currency: String?,
         val balances: Map<String, Double>
-    ) : Card(id, number, holderName, isBlocked, name, expiryDate, currency) {
+    ) : Card(id, number, holderName, isBlocked) {
         override fun getDisplayBalance() =
-            balances.entries.joinToString(" • ") { "${it.key}: ${it.value.formatAsCurrency()}" }
+            balances.entries.joinToString(separator = " • ") { "${it.key}: ${it.value.formatAsCurrency()}" }
     }
 
     data class Debit(
@@ -58,13 +46,27 @@ sealed class Card(
         override val number: String,
         override val holderName: String,
         override val isBlocked: Boolean,
-        override val name: String,
-        override val expiryDate: String?,
-        override val currency: String?,
         val linkedAccountName: String,
         val balance: Double
-    ) : Card(id, number, holderName, isBlocked, name, expiryDate, currency) {
-        override fun getDisplayBalance() = "$currency ${balance.formatAsCurrency()}"
+    ) : Card(id, number, holderName, isBlocked) {
+        override fun getDisplayBalance() = "KES ${balance.formatAsCurrency()}"
     }
 }
+
 fun Double.formatAsCurrency(): String = String.format("%,.2f", this)
+
+data class Transaction(
+    val id: String,
+    val amount: Double,
+    val date: String,
+    val description: String,
+    val currency: String? = "KES"
+)
+
+data class User(
+    val name: String,
+    val avatarUrl: String? = null,
+    val email: String,
+    val phone: String? = null,
+    val address: String? = null
+)

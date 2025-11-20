@@ -1,79 +1,108 @@
-package com.coperative.financialcardsApp.ui.screens // Assuming a package name
+package com.coperative.financialcardsApp.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.coperative.financialcardsApp.domain.model.Card
+import com.coperative.financialcardsApp.domain.model.Transaction
+import com.coperative.financialcardsApp.ui.screens.viewmodel.CardViewModel
 
 @Composable
-fun CardDetailsScreen(card: Card, navController: NavHostController) {
-    var isBlocked by remember { mutableStateOf(false) } // Local storage simulation
+fun CardDetailsScreen(
+    card: Card,
+    navController: NavHostController,
+    viewModel: CardViewModel
+) {
+    // Track blocked state locally (sync with repo)
+    var isBlocked by remember { mutableStateOf(card.isBlocked) }
+
+    // Collect transactions from the ViewModel
+    val transactionsState = viewModel.transactions.collectAsState().value
+
+    // Fetch transactions when screen is displayed
+    LaunchedEffect(card.id) {
+        viewModel.fetchTransactions(card.id)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("${card.currency} Details", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text("${card.holderName} - ${card.number}", fontSize = 24.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        CardItem(card, onClick = {}) // Display the card again
+
+        // Display the card itself
+        CardItem(card = card, onClick = {})
+
         Spacer(modifier = Modifier.height(16.dp))
-        if (card.balance != null) {
-            Text("Balance: ${card.balance}", fontSize = 20.sp)
-        }
+
+        Text("Balance: ${card.getDisplayBalance()}", fontSize = 20.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+
+        // Action buttons
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Button(onClick = { /* New Card logic */ }) { Text("New Card") }
             Button(onClick = { /* Deposit logic */ }) { Text("Deposit") }
             Button(onClick = { /* Withdraw logic */ }) { Text("Withdraw") }
-            Button(onClick = { isBlocked = !isBlocked }) {
+            Button(onClick = {
+                isBlocked = !isBlocked
+                viewModel.toggleCardBlock(card.id, isBlocked)
+            }) {
                 Text(if (isBlocked) "Unblock Card" else "Block Card")
             }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Text("Recent Transactions", fontSize = 20.sp)
-        sampleTransactions.take(10).forEach { transaction ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Icon if available
-                if (transaction != null) {
-                    AsyncImage(
-                        model = transaction.iconUrl,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        contentScale = ContentScale.Crop
-                    )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            when (transactionsState) {
+                is com.coperative.financialcardsApp.common.Resource.Loading -> {
+                    item {
+                        Text("Loading transactions...")
+                    }
                 }
-                Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                    Text(transaction.description)
-                    Text(transaction.date, fontSize = 12.sp)
+                is com.coperative.financialcardsApp.common.Resource.Error -> {
+                    item {
+                        Text("Error: ${transactionsState.message}")
+                    }
                 }
-                Text(transaction.amount, textAlign = TextAlign.End)
+                is com.coperative.financialcardsApp.common.Resource.Success -> {
+                    items(transactionsState.data) { transaction ->
+                        TransactionRow(transaction)
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+fun TransactionRow(transaction: Transaction) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(transaction.description)
+            Text(transaction.date, fontSize = 12.sp)
+        }
+        Text("${transaction.amount} ${transaction.currency}", fontSize = 14.sp)
     }
 }
