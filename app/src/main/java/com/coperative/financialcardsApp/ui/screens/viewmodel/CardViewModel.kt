@@ -9,8 +9,9 @@ import com.coperative.financialcardsApp.domain.model.User
 import com.coperative.financialcardsApp.domain.repositories.cardRepositories.CardRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CardViewModel(
+class CardViewModel @Inject constructor(
     private val repository: CardRepository
 ) : ViewModel() {
 
@@ -22,6 +23,13 @@ class CardViewModel(
             repository.getCards()
                 .collect { _cards.value = it }
         }
+    }
+
+    fun getCardById(cardId: String): Card? {
+        val current = _cards.value
+        return if (current is Resource.Success) {
+            current.data.firstOrNull { it.id == cardId }
+        } else null
     }
 
     private val _transactions = MutableStateFlow<Resource<List<Transaction>>>(Resource.Loading())
@@ -46,7 +54,6 @@ class CardViewModel(
     fun toggleCardBlock(cardId: String, isBlocked: Boolean) {
         viewModelScope.launch {
             repository.toggleBlock(cardId, isBlocked)
-            // Optional: refresh cards after toggle
             fetchCards()
         }
     }

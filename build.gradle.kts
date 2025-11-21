@@ -4,3 +4,11 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
 }
+
+configurations.all {
+    resolutionStrategy {
+        force("com.squareup:javapoet:1.13.0")
+        // If using KotlinPoet, you might also need to force its version
+         force("com.squareup:kotlinpoet:2.0.0")
+    }
+}
