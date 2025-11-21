@@ -57,16 +57,21 @@ fun Double.formatAsCurrency(): String = String.format("%,.2f", this)
 
 data class Transaction(
     val id: String,
+    val cardId: String,          // add this
     val amount: Double,
     val date: String,
     val description: String,
     val currency: String? = "KES"
 )
 
+
 data class User(
     val name: String,
-    val avatarUrl: String? = null,
+    val avatarUrl: String,
     val email: String,
-    val phone: String? = null,
-    val address: String? = null
+    val phone: String,
+    val address: String, // e.g. "123 Street, Nairobi, Kenya"
+    val city: String? = null,
+    val country: String? = null,
+    val postalCode: String? = null
 )

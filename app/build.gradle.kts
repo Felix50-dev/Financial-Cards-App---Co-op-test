@@ -95,6 +95,8 @@ dependencies {
 
     // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
+        implementation("com.google.code.gson:gson:2.13.2")
+
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.51.1")

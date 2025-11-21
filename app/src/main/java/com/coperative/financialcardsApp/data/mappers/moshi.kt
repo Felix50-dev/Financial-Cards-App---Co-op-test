@@ -11,33 +11,88 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
+// For Prepaid
+data class PrepaidExtra(
+    val balance: Double
+)
+
+// For Credit
+data class CreditExtra(
+    val creditLimit: Double,
+    val dueDate: String
+)
+
+// For MultiCurrency
+data class MultiExtra(
+    val balances: Map<String, Double>
+)
+
+// For Debit
+data class DebitExtra(
+    val linkedAccountName: String,
+    val balance: Double
+)
+
 fun CardEntity.toDomain(): Card {
     return when (type) {
         "PREPAID" -> {
-            val balance = extraJson?.let { moshi.adapter(Double::class.java).fromJson(it) } ?: 0.0
+            val balance = extraJson?.let {
+                val adapter = moshi.adapter(PrepaidExtra::class.java)
+                adapter.fromJson(it)?.balance ?: 0.0
+            } ?: 0.0
             Card.Prepaid(id, number, holderName, isBlocked, balance)
         }
+
         "CREDIT" -> {
-            val map = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Any> }.orEmpty()
-            val creditLimit = map["creditLimit"] as? Double ?: 0.0
-            val dueDate = map["dueDate"] as? String ?: ""
-            Card.Credit(id, number, holderName, isBlocked, creditLimit, dueDate)
+            val creditExtra = extraJson?.let {
+                val adapter = moshi.adapter(CreditExtra::class.java)
+                adapter.fromJson(it)
+            }
+            Card.Credit(
+                id = id,
+                number = number,
+                holderName = holderName,
+                isBlocked = isBlocked,
+                creditLimit = creditExtra?.creditLimit ?: 0.0,
+                dueDate = creditExtra?.dueDate ?: ""
+            )
         }
-        "MULTI" -> {
-            val map = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Double> }.orEmpty()
-            Card.MultiCurrency(id, number, holderName, isBlocked, map)
+
+        "MULTI_CURRENCY" -> {
+            val multiExtra = extraJson?.let {
+                val adapter = moshi.adapter(MultiExtra::class.java)
+                adapter.fromJson(it)
+            }
+            Card.MultiCurrency(
+                id = id,
+                number = number,
+                holderName = holderName,
+                isBlocked = isBlocked,
+                balances = multiExtra?.balances.orEmpty()
+            )
         }
+
         "DEBIT" -> {
-            val map = extraJson?.let { moshi.adapter(Map::class.java).fromJson(it) as? Map<String, Any> }.orEmpty()
-            val balance = map["balance"] as? Double ?: 0.0
-            val linkedAccountName = map["linkedAccountName"] as? String ?: "Unknown"
-            Card.Debit(id, number, holderName, isBlocked, linkedAccountName, balance)
+            val debitExtra = extraJson?.let {
+                val adapter = moshi.adapter(DebitExtra::class.java)
+                adapter.fromJson(it)
+            }
+            Card.Debit(
+                id = id,
+                number = number,
+                holderName = holderName,
+                isBlocked = isBlocked,
+                linkedAccountName = debitExtra?.linkedAccountName ?: "Unknown",
+                balance = debitExtra?.balance ?: 0.0
+            )
         }
+
         else -> throw IllegalArgumentException("Unknown card type: $type")
     }
 }
 
-fun TransactionEntity.toDomain() = Transaction(id, amount, date, description, currency)
+
+fun TransactionEntity.toDomain() = Transaction(id, cardId,amount, date, description, currency)
 
 fun CardDto.toEntity(): CardEntity {
     val extra = when(type) {

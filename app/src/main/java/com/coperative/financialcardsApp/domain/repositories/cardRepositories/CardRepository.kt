@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface CardRepository {
     fun getCards(): Flow<Resource<List<Card>>>
-    fun getTransactions(cardId: String): Flow<Resource<List<Transaction>>>
+    fun getAllTransactions(): Flow<Resource<List<Transaction>>>
     suspend fun toggleBlock(cardId: String, isBlocked: Boolean)
     fun getUser(): Flow<Resource<User>>
 }
